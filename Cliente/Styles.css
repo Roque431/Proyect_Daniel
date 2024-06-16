@@ -1,0 +1,57 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f2f2f2;
+    margin: 0;
+    padding: 0;
+}
+
+#connection {
+    width: 80%;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+#reservations {
+    margin-top: 20px;
+}
+
+.reservation {
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.reservation:last-child {
+    border-bottom: none;
+}
+
+.reservation h3 {
+    margin: 0;
+    font-size: 1.2em;
+    color: #333;
+}
+
+.reservation p {
+    margin: 5px 0;
+    color: #666;
+}
+
+#clientes {
+    list-style-type: none;
+    padding: 0;
+}
+.cliente {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+#people{
+    width: 80%;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}

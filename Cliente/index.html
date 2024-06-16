@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel reservas</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.min.js"></script>
+
+</head>
+<body>
+    <div id="connection">
+        <h1>My Hotel reservas</h1>
+        <div id="reservas"></div>
+    </div>
+    <script>
+       
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchReservas();
+            setInterval(fetchNewReservas, 5000); 
+        });
+        
+        function fetchReservas() {
+            fetch('http://localhost:3000/reservas') 
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => displayReservas(data))
+                .catch(error => console.error('Error fetching reservas:', error));
+        }
+        
+        function fetchNewReservas() {
+            fetch('http://localhost:3000/reservas') 
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.length > 0) {
+                        displayReservas(data);
+                    }
+                })
+                .catch(error => console.error('Error fetching new reservas:', error));
+        }
+        
+        function displayReservas(reservas) {
+            const reservasDiv = document.getElementById('reservas');
+            reservasDiv.innerHTML = ''; 
+        
+            if (reservas.length === 0) {
+                reservasDiv.innerHTML = '<p>No reservas found.</p>';
+                return;
+            }
+        
+            reservas.forEach(reservation => {
+                const reservationDiv = document.createElement('div');
+                reservationDiv.className = 'reservation';
+        
+                const reservationTitle = document.createElement('h3');
+                reservationTitle.textContent = `Reservation ID: ${reservation.idReserva}`;
+        
+                const reservationDetails = document.createElement('p');
+                reservationDetails.textContent = `Cliente ID: ${reservation.idCliente}, Habitacion ID: ${reservation.idHabitacion}, Estado: ${reservation.estado}, Fecha de inicio: ${reservation.fechaInicio}, Fecha de fin: ${reservation.fechaFin}`;
+        
+                reservationDiv.appendChild(reservationTitle);
+                reservationDiv.appendChild(reservationDetails);
+                reservasDiv.appendChild(reservationDiv);
+            });
+        }
+        
+    </script>
+    <div id="connection">
+        <h1>My Hotel reservas</h1>
+        <div id="habitaciones"></div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchHabitaciones();
+            setInterval(fetchHabitaciones, 5000);  // Polling every 5 seconds
+
+            const socket = new ReconnectingWebSocket('ws://localhost:3000');
+            socket.onopen = () => {
+                console.log('Conectado al WebSocket');
+                socket.send(JSON.stringify({ action: 'gethabitaciones' }));
+            };
+
+            socket.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                if (message.event === 'gethabitaciones' || message.event === 'habitacionCreada') {
+                    displayHabitaciones(message.data);
+                }
+            };
+
+            socket.onclose = () => {
+                console.log('Desconectado del WebSocket');
+            };
+        });
+
+        function fetchHabitaciones() {
+            fetch('http://localhost:3000/habitaciones')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => displayHabitaciones(data))
+                .catch(error => console.error('Error fetching habitaciones:', error));
+        }
+
+        function displayHabitaciones(habitaciones) {
+            const habitacionesDiv = document.getElementById('habitaciones');
+            habitacionesDiv.innerHTML = ''; 
+
+            if (habitaciones.length === 0) {
+                habitacionesDiv.innerHTML = '<p>No habitaciones found.</p>';
+                return;
+            }
+
+            habitaciones.forEach(habitacion => {
+                const habitacionDiv = document.createElement('div');
+                habitacionDiv.className = 'habitacion';
+
+                const habitacionTitle = document.createElement('h3');
+                habitacionTitle.textContent = `Habitación ID: ${habitacion.idHabitacion}`;
+
+                const habitacionDetails = document.createElement('p');
+                habitacionDetails.textContent = `Número: ${habitacion.numHabitacion}, Tipo: ${habitacion.tipo}, Precio por Noche: ${habitacion.precioXNoche}, Estado: ${habitacion.estado}`;
+
+                habitacionDiv.appendChild(habitacionTitle);
+                habitacionDiv.appendChild(habitacionDetails);
+                habitacionesDiv.appendChild(habitacionDiv);
+            });
+        }
+    </script>
+
+
+    <div id="people">
+        <h1>Lista de Clientes</h1>
+        <ul id="clientes"></ul>
+        <script src="app.js"></script>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const clientesList = document.getElementById('clientes');
+        
+            // Función para cargar todos los clientes inicialmente
+            function loadClientes() {
+                fetch('http://localhost:3000/clientes')
+                    .then(response => response.json())
+                    .then(data => {
+                        clientesList.innerHTML = '';
+                        data.forEach(cliente => {
+                            const clienteItem = document.createElement('li');
+                            clienteItem.className = 'cliente';
+                            clienteItem.textContent = `${cliente.nombre} - ${cliente.email}`;
+                            clientesList.appendChild(clienteItem);
+                        });
+                    })
+                    .catch(error => console.error('Error al obtener los clientes:', error));
+            }
+        
+            // Función para manejar long polling
+            function pollNewClientes() {
+                fetch('http://localhost:3000/clientes/poll')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const cliente = data.cliente;
+                            const clienteItem = document.createElement('li');
+                            clienteItem.className = 'cliente';
+                            clienteItem.textContent = `${cliente.nombre} - ${cliente.email}`;
+                            clientesList.appendChild(clienteItem);
+                        }
+                        pollNewClientes();
+                    })
+                    .catch(error => {
+                        console.error('Error en long polling:', error);
+                        setTimeout(pollNewClientes, 5000);
+                    });
+            }
+        
+            // Inicializar la carga de clientes y el long polling
+            loadClientes();
+            pollNewClientes();
+        });
+        
+    </script>
+</body>
+</html>
+
